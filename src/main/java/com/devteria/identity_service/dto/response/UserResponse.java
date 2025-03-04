@@ -6,6 +6,8 @@ import lombok.experimental.FieldDefaults;
 import java.time.LocalDate;
 import java.util.Set;
 
+import com.devteria.identity_service.entity.Role;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,6 +19,6 @@ public class UserResponse {
     String firstName;
     String lastName;
     LocalDate dob;
-    Set<String> roles;
+    Set<Role> roles;
 
 }
