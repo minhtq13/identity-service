@@ -8,6 +8,7 @@ import com.devteria.identity_service.enums.Role;
 import com.devteria.identity_service.exception.AppException;
 import com.devteria.identity_service.exception.ErrorCode;
 import com.devteria.identity_service.mapper.UserMapper;
+import com.devteria.identity_service.repository.RoleRepository;
 import com.devteria.identity_service.repository.UserRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ import java.util.List;
 public class UserService {
   UserRepository userRepository;
   UserMapper userMapper;
+  RoleRepository roleRepository;
   PasswordEncoder passwordEncoder;
 
   public UserResponse createUser(UserCreationRequest request) {
@@ -62,6 +64,10 @@ public class UserService {
         .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
     userMapper.updateUser(user, request);
+    user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+    var roles = roleRepository.findAllById(request.getRoles());
+    user.setRoles(new HashSet<>(roles));
 
     return userMapper.toUserResponse(userRepository.save(user));
   }
