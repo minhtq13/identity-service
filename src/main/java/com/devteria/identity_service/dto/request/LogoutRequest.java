@@ -1,4 +1,4 @@
-package com.devteria.identity_service.dto.response;
+package com.devteria.identity_service.dto.request;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -12,8 +12,6 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class IntrospectResonse {
-
-  boolean valid;
-
+public class LogoutRequest {
+  private String token;
 }

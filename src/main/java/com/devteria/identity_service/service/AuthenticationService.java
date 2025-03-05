@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.StringJoiner;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -14,11 +15,14 @@ import org.springframework.util.CollectionUtils;
 
 import com.devteria.identity_service.dto.request.AuthenticationRequest;
 import com.devteria.identity_service.dto.request.IntrospectRequest;
+import com.devteria.identity_service.dto.request.LogoutRequest;
 import com.devteria.identity_service.dto.response.AuthenticationResponse;
 import com.devteria.identity_service.dto.response.IntrospectResonse;
+import com.devteria.identity_service.entity.InvalidatedToken;
 import com.devteria.identity_service.entity.User;
 import com.devteria.identity_service.exception.AppException;
 import com.devteria.identity_service.exception.ErrorCode;
+import com.devteria.identity_service.repository.InvalidatedRepository;
 import com.devteria.identity_service.repository.UserRepository;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -41,6 +45,7 @@ import lombok.experimental.NonFinal;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuthenticationService {
   UserRepository userRepository;
+  InvalidatedRepository invalidatedRepository;
 
   @NonFinal
   @Value("${jwt.signerKey}")
@@ -48,17 +53,16 @@ public class AuthenticationService {
 
   public IntrospectResonse introspect(IntrospectRequest request) throws JOSEException, ParseException {
     var token = request.getToken();
-    JWSVerifier verifier = new MACVerifier(SECRET_KEY.getBytes());
-
-    SignedJWT signedJWT = SignedJWT.parse(token);
-
-    Date expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
-
-    var verified = signedJWT.verify(verifier);
-
+    boolean valid = true;
+    try {
+      verifyToken(token);
+    } catch (Exception e) {
+      valid = false;
+    }
     return IntrospectResonse.builder()
-        .valid(verified && expiryTime.after(new Date()))
+        .valid(valid)
         .build();
+
   }
 
   public AuthenticationResponse authenticate(AuthenticationRequest request) {
@@ -80,6 +84,42 @@ public class AuthenticationService {
 
   }
 
+  public void logout(LogoutRequest token) throws JOSEException, ParseException {
+    var signedToken = verifyToken(token.getToken());
+
+    String jit = signedToken.getJWTClaimsSet().getJWTID();
+
+    Date expiryTime = signedToken.getJWTClaimsSet().getExpirationTime();
+
+    InvalidatedToken invalidatedToken = InvalidatedToken.builder()
+        .id(jit)
+        .expiryTime(expiryTime)
+        .build();
+
+    invalidatedRepository.save(invalidatedToken);
+
+  }
+
+  private SignedJWT verifyToken(String token) throws JOSEException, ParseException {
+    JWSVerifier verifier = new MACVerifier(SECRET_KEY.getBytes());
+
+    SignedJWT signedJWT = SignedJWT.parse(token);
+
+    Date expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
+
+    var verified = signedJWT.verify(verifier);
+
+    if (!verified || !expiryTime.after(new Date())) {
+      throw new AppException(ErrorCode.UNAUTHENTICATED);
+    }
+
+    if (invalidatedRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID())) {
+      throw new AppException(ErrorCode.UNAUTHENTICATED);
+    }
+
+    return signedJWT;
+  }
+
   private String generateToken(User user) {
     JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
     JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
@@ -87,6 +127,7 @@ public class AuthenticationService {
         .issuer("devteria.com")
         .issueTime(new Date())
         .expirationTime(new Date(Instant.now().plus(1, ChronoUnit.HOURS).toEpochMilli()))
+        .jwtID(UUID.randomUUID().toString())
         .claim("scope", buildScope(user))
         .build();
     Payload payload = new Payload(claimsSet.toJSONObject());

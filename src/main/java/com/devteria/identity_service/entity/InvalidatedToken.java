@@ -1,5 +1,9 @@
-package com.devteria.identity_service.dto.response;
+package com.devteria.identity_service.entity;
 
+import java.util.Date;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -7,13 +11,16 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+@Entity
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class IntrospectResonse {
+public class InvalidatedToken {
 
-  boolean valid;
+  @Id
+  String id;
+  Date expiryTime;
 
 }
