@@ -18,15 +18,15 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserCreationRequest {
-  @Size(min = 3, max = 20, message = "USERNAME_INVALID")
+  @Size(min = 4, max = 20, message = "USERNAME_INVALID")
   String username;
 
-  @Size(min = 8, max = 20, message = "PASSWORD_INVALID")
+  @Size(min = 6, max = 20, message = "PASSWORD_INVALID")
   String password;
   String firstName;
   String lastName;
 
-  @DobConstraint(min = 18, message = "INVALID_DOB")
+  @DobConstraint(min = 16, message = "INVALID_DOB")
   LocalDate dob;
 
 }
