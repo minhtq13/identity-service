@@ -16,6 +16,7 @@ import org.springframework.util.CollectionUtils;
 import com.devteria.identity_service.dto.request.AuthenticationRequest;
 import com.devteria.identity_service.dto.request.IntrospectRequest;
 import com.devteria.identity_service.dto.request.LogoutRequest;
+import com.devteria.identity_service.dto.request.RefreshRequest;
 import com.devteria.identity_service.dto.response.AuthenticationResponse;
 import com.devteria.identity_service.dto.response.IntrospectResonse;
 import com.devteria.identity_service.entity.InvalidatedToken;
@@ -118,6 +119,36 @@ public class AuthenticationService {
     }
 
     return signedJWT;
+  }
+
+  public AuthenticationResponse refreshToken(RefreshRequest request) throws JOSEException, ParseException {
+    // Verify token cũ
+    var signedJWT = verifyToken(request.getToken());
+
+    // Lấy thông tin của token cũ
+    var jit = signedJWT.getJWTClaimsSet().getJWTID();
+    var expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
+
+    // Lưu token vào danh sách token đã invalidated_token table (logout)
+    InvalidatedToken invalidatedToken = InvalidatedToken.builder()
+        .id(jit)
+        .expiryTime(expiryTime)
+        .build();
+
+    invalidatedRepository.save(invalidatedToken);
+
+    // Lấy thông tin user từ token cũ
+    var username = signedJWT.getJWTClaimsSet().getSubject();
+    var user = userRepository.findByUsername(username)
+        .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+
+    // Tạo token mới
+    var token = generateToken(user);
+
+    return AuthenticationResponse.builder()
+        .token(token)
+        .authenticated(true)
+        .build();
   }
 
   private String generateToken(User user) {

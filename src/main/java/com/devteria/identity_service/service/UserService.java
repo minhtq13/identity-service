@@ -83,7 +83,7 @@ public class UserService {
         .map(userMapper::toUserResponse).toList();
   }
 
-  @PostAuthorize("returnObject.username == authentication.name")
+  @PostAuthorize("returnObject.username == authentication.name || hasRole('ADMIN')")
   public UserResponse getUser(String id) {
     log.info("In method get user by Id");
     return userMapper.toUserResponse(userRepository.findById(id)
