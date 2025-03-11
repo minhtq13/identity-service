@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.devteria.identity_service.entity.User;
-import com.devteria.identity_service.enums.Role;
+import com.devteria.identity_service.enums.RoleEnums;
 import com.devteria.identity_service.repository.UserRepository;
 
 import lombok.AccessLevel;
@@ -26,16 +26,13 @@ public class ApplicationInitConfig {
     PasswordEncoder passwordEncoder;
 
     @Bean
-    @ConditionalOnProperty(
-            prefix = "spring",
-            value = "datasource.driverClassName",
-            havingValue = "com.mysql.cj.jdbc.Driver")
+    @ConditionalOnProperty(prefix = "spring", value = "datasource.driverClassName", havingValue = "com.mysql.cj.jdbc.Driver")
     ApplicationRunner applicationRunner(UserRepository userRepository) {
         log.info("Init application.....");
         return args -> {
             if (!userRepository.existsByUsername("admin")) {
                 var roles = new HashSet<String>();
-                roles.add(Role.ADMIN.name());
+                roles.add(RoleEnums.ADMIN.name());
 
                 User user = User.builder()
                         .username("admin")
