@@ -1,11 +1,12 @@
 package com.devteria.identity_service.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
-import lombok.experimental.FieldDefaults;
-
 import java.time.LocalDate;
 import java.util.Set;
+
+import jakarta.persistence.*;
+
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 @Getter
 @Setter
@@ -15,15 +16,16 @@ import java.util.Set;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
 public class User {
-  @Id
-  @GeneratedValue(strategy = GenerationType.UUID)
-  String id;
-  String username;
-  String password;
-  String firstName;
-  LocalDate dob;
-  String lastName;
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    String id;
 
-  @ManyToMany
-  Set<Role> roles;
+    String username;
+    String password;
+    String firstName;
+    LocalDate dob;
+    String lastName;
+
+    @ManyToMany
+    Set<Role> roles;
 }

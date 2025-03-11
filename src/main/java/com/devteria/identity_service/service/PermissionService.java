@@ -21,24 +21,23 @@ import lombok.extern.slf4j.Slf4j;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class PermissionService {
 
-  PermissionRepository permissionRepository;
+    PermissionRepository permissionRepository;
 
-  PermissionMapper permissionMapper;
+    PermissionMapper permissionMapper;
 
-  public PermissionResponse create(PermissionRequest request) {
-    Permission permission = permissionMapper.toPermission(request);
-    permissionRepository.save(permission);
-    return permissionMapper.toPermissionResponse(permission);
-  }
+    public PermissionResponse create(PermissionRequest request) {
+        Permission permission = permissionMapper.toPermission(request);
+        permissionRepository.save(permission);
+        return permissionMapper.toPermissionResponse(permission);
+    }
 
-  public List<PermissionResponse> getAll() {
-    return permissionRepository.findAll().stream()
-        .map(permissionMapper::toPermissionResponse)
-        .toList();
-  }
+    public List<PermissionResponse> getAll() {
+        return permissionRepository.findAll().stream()
+                .map(permissionMapper::toPermissionResponse)
+                .toList();
+    }
 
-  public void delete(String name) {
-    permissionRepository.deleteById(name);
-  }
-
+    public void delete(String name) {
+        permissionRepository.deleteById(name);
+    }
 }

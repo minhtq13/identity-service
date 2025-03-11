@@ -23,26 +23,29 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ApplicationInitConfig {
 
-  PasswordEncoder passwordEncoder;
+    PasswordEncoder passwordEncoder;
 
-  @Bean
-  @ConditionalOnProperty(prefix = "spring", value = "datasource.driverClassName", havingValue = "com.mysql.cj.jdbc.Driver")
-  ApplicationRunner applicationRunner(UserRepository userRepository) {
-    log.info("Init application.....");
-    return args -> {
-      if (!userRepository.existsByUsername("admin")) {
-        var roles = new HashSet<String>();
-        roles.add(Role.ADMIN.name());
+    @Bean
+    @ConditionalOnProperty(
+            prefix = "spring",
+            value = "datasource.driverClassName",
+            havingValue = "com.mysql.cj.jdbc.Driver")
+    ApplicationRunner applicationRunner(UserRepository userRepository) {
+        log.info("Init application.....");
+        return args -> {
+            if (!userRepository.existsByUsername("admin")) {
+                var roles = new HashSet<String>();
+                roles.add(Role.ADMIN.name());
 
-        User user = User.builder()
-            .username("admin")
-            .password(passwordEncoder.encode("admin"))
-            // .roles(roles)
-            .build();
+                User user = User.builder()
+                        .username("admin")
+                        .password(passwordEncoder.encode("admin"))
+                        // .roles(roles)
+                        .build();
 
-        userRepository.save(user);
-        log.warn("Admin user has been created with default password: admin, please change it after login!");
-      }
-    };
-  }
+                userRepository.save(user);
+                log.warn("Admin user has been created with default password: admin, please change it after login!");
+            }
+        };
+    }
 }

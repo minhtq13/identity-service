@@ -10,9 +10,8 @@ import com.devteria.identity_service.entity.Role;
 @Mapper(componentModel = "spring")
 public interface RoleMapper {
 
-  @Mapping(target = "permissions", ignore = true)
-  Role toRole(RoleRequest request);
+    @Mapping(target = "permissions", ignore = true)
+    Role toRole(RoleRequest request);
 
-  RoleResponse toRoleResponse(Role role);
-
+    RoleResponse toRoleResponse(Role role);
 }

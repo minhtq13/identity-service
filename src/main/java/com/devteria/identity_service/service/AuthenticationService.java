@@ -47,159 +47,149 @@ import lombok.extern.slf4j.Slf4j;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j
 public class AuthenticationService {
-  UserRepository userRepository;
-  InvalidatedRepository invalidatedRepository;
+    UserRepository userRepository;
+    InvalidatedRepository invalidatedRepository;
 
-  @NonFinal
-  @Value("${jwt.signerKey}")
-  protected String SECRET_KEY;
+    @NonFinal
+    @Value("${jwt.signerKey}")
+    protected String SECRET_KEY;
 
-  @NonFinal
-  @Value("${jwt.valid-duration}")
-  protected int VALID_DURATION;
+    @NonFinal
+    @Value("${jwt.valid-duration}")
+    protected int VALID_DURATION;
 
-  @NonFinal
-  @Value("${jwt.refreshable-duration}")
-  protected int REFRESHABLE_DURATION;
+    @NonFinal
+    @Value("${jwt.refreshable-duration}")
+    protected int REFRESHABLE_DURATION;
 
-  public IntrospectResonse introspect(IntrospectRequest request) throws JOSEException, ParseException {
-    var token = request.getToken();
-    boolean valid = true;
-    try {
-      verifyToken(token, false);
-    } catch (Exception e) {
-      valid = false;
-    }
-    return IntrospectResonse.builder()
-        .valid(valid)
-        .build();
-
-  }
-
-  public AuthenticationResponse authenticate(AuthenticationRequest request) {
-    var user = userRepository.findByUsername(request.getUsername())
-        .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-
-    PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
-
-    boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
-
-    if (!authenticated) {
-      throw new AppException(ErrorCode.UNAUTHENTICATED);
-    }
-    var token = generateToken(user);
-    return AuthenticationResponse.builder()
-        .token(token)
-        .authenticated(true)
-        .build();
-
-  }
-
-  public void logout(LogoutRequest token) throws JOSEException, ParseException {
-    try {
-
-      var signedToken = verifyToken(token.getToken(), true);
-
-      String jit = signedToken.getJWTClaimsSet().getJWTID();
-
-      Date expiryTime = signedToken.getJWTClaimsSet().getExpirationTime();
-
-      InvalidatedToken invalidatedToken = InvalidatedToken.builder()
-          .id(jit)
-          .expiryTime(expiryTime)
-          .build();
-
-      invalidatedRepository.save(invalidatedToken);
-    } catch (Exception e) {
-      log.info("Token already expired");
+    public IntrospectResonse introspect(IntrospectRequest request) throws JOSEException, ParseException {
+        var token = request.getToken();
+        boolean valid = true;
+        try {
+            verifyToken(token, false);
+        } catch (Exception e) {
+            valid = false;
+        }
+        return IntrospectResonse.builder().valid(valid).build();
     }
 
-  }
+    public AuthenticationResponse authenticate(AuthenticationRequest request) {
+        var user = userRepository
+                .findByUsername(request.getUsername())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-  private SignedJWT verifyToken(String token, boolean isRefresh) throws JOSEException, ParseException {
-    JWSVerifier verifier = new MACVerifier(SECRET_KEY.getBytes());
+        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
 
-    SignedJWT signedJWT = SignedJWT.parse(token);
+        boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
 
-    Date expiryTime = isRefresh ? new Date(signedJWT.getJWTClaimsSet().getIssueTime().toInstant()
-        .plus(REFRESHABLE_DURATION, ChronoUnit.SECONDS).toEpochMilli())
-        : signedJWT.getJWTClaimsSet().getExpirationTime();
-
-    var verified = signedJWT.verify(verifier);
-
-    if (!verified || !expiryTime.after(new Date())) {
-      throw new AppException(ErrorCode.UNAUTHENTICATED);
+        if (!authenticated) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+        var token = generateToken(user);
+        return AuthenticationResponse.builder().token(token).authenticated(true).build();
     }
 
-    if (invalidatedRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID())) {
-      throw new AppException(ErrorCode.UNAUTHENTICATED);
+    public void logout(LogoutRequest token) throws JOSEException, ParseException {
+        try {
+
+            var signedToken = verifyToken(token.getToken(), true);
+
+            String jit = signedToken.getJWTClaimsSet().getJWTID();
+
+            Date expiryTime = signedToken.getJWTClaimsSet().getExpirationTime();
+
+            InvalidatedToken invalidatedToken =
+                    InvalidatedToken.builder().id(jit).expiryTime(expiryTime).build();
+
+            invalidatedRepository.save(invalidatedToken);
+        } catch (Exception e) {
+            log.info("Token already expired");
+        }
     }
 
-    return signedJWT;
-  }
+    private SignedJWT verifyToken(String token, boolean isRefresh) throws JOSEException, ParseException {
+        JWSVerifier verifier = new MACVerifier(SECRET_KEY.getBytes());
 
-  public AuthenticationResponse refreshToken(RefreshRequest request) throws JOSEException, ParseException {
-    // Verify token cũ
-    var signedJWT = verifyToken(request.getToken(), true);
+        SignedJWT signedJWT = SignedJWT.parse(token);
 
-    // Lấy thông tin của token cũ
-    var jit = signedJWT.getJWTClaimsSet().getJWTID();
-    var expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
+        Date expiryTime = isRefresh
+                ? new Date(signedJWT
+                        .getJWTClaimsSet()
+                        .getIssueTime()
+                        .toInstant()
+                        .plus(REFRESHABLE_DURATION, ChronoUnit.SECONDS)
+                        .toEpochMilli())
+                : signedJWT.getJWTClaimsSet().getExpirationTime();
 
-    // Lưu token vào danh sách token đã invalidated_token table (logout)
-    InvalidatedToken invalidatedToken = InvalidatedToken.builder()
-        .id(jit)
-        .expiryTime(expiryTime)
-        .build();
+        var verified = signedJWT.verify(verifier);
 
-    invalidatedRepository.save(invalidatedToken);
+        if (!verified || !expiryTime.after(new Date())) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
 
-    // Lấy thông tin user từ token cũ
-    var username = signedJWT.getJWTClaimsSet().getSubject();
-    var user = userRepository.findByUsername(username)
-        .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+        if (invalidatedRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID())) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
 
-    // Tạo token mới
-    var token = generateToken(user);
-
-    return AuthenticationResponse.builder()
-        .token(token)
-        .authenticated(true)
-        .build();
-  }
-
-  private String generateToken(User user) {
-    JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
-    JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
-        .subject(user.getUsername())
-        .issuer("devteria.com")
-        .issueTime(new Date())
-        .expirationTime(new Date(Instant.now().plus(VALID_DURATION, ChronoUnit.SECONDS).toEpochMilli()))
-        .jwtID(UUID.randomUUID().toString())
-        .claim("scope", buildScope(user))
-        .build();
-    Payload payload = new Payload(claimsSet.toJSONObject());
-    JWSObject jwsObject = new JWSObject(header, payload);
-    try {
-      jwsObject.sign(new MACSigner(SECRET_KEY.getBytes()));
-      return jwsObject.serialize();
-    } catch (JOSEException e) {
-      throw new RuntimeException(e);
+        return signedJWT;
     }
-  }
 
-  private String buildScope(User user) {
-    StringJoiner stringJoiner = new StringJoiner(" ");
-    if (!CollectionUtils.isEmpty(user.getRoles())) {
-      user.getRoles().forEach(role -> {
-        stringJoiner.add("ROLE_" + role.getName());
-        role.getPermissions().forEach(permission -> {
-          if (!CollectionUtils.isEmpty(role.getPermissions()))
-            stringJoiner.add(permission.getName());
-        });
-      });
+    public AuthenticationResponse refreshToken(RefreshRequest request) throws JOSEException, ParseException {
+        // Verify token cũ
+        var signedJWT = verifyToken(request.getToken(), true);
+
+        // Lấy thông tin của token cũ
+        var jit = signedJWT.getJWTClaimsSet().getJWTID();
+        var expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
+
+        // Lưu token vào danh sách token đã invalidated_token table (logout)
+        InvalidatedToken invalidatedToken =
+                InvalidatedToken.builder().id(jit).expiryTime(expiryTime).build();
+
+        invalidatedRepository.save(invalidatedToken);
+
+        // Lấy thông tin user từ token cũ
+        var username = signedJWT.getJWTClaimsSet().getSubject();
+        var user =
+                userRepository.findByUsername(username).orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+
+        // Tạo token mới
+        var token = generateToken(user);
+
+        return AuthenticationResponse.builder().token(token).authenticated(true).build();
     }
-    return stringJoiner.toString();
-  }
 
+    private String generateToken(User user) {
+        JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
+        JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
+                .subject(user.getUsername())
+                .issuer("devteria.com")
+                .issueTime(new Date())
+                .expirationTime(new Date(
+                        Instant.now().plus(VALID_DURATION, ChronoUnit.SECONDS).toEpochMilli()))
+                .jwtID(UUID.randomUUID().toString())
+                .claim("scope", buildScope(user))
+                .build();
+        Payload payload = new Payload(claimsSet.toJSONObject());
+        JWSObject jwsObject = new JWSObject(header, payload);
+        try {
+            jwsObject.sign(new MACSigner(SECRET_KEY.getBytes()));
+            return jwsObject.serialize();
+        } catch (JOSEException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private String buildScope(User user) {
+        StringJoiner stringJoiner = new StringJoiner(" ");
+        if (!CollectionUtils.isEmpty(user.getRoles())) {
+            user.getRoles().forEach(role -> {
+                stringJoiner.add("ROLE_" + role.getName());
+                role.getPermissions().forEach(permission -> {
+                    if (!CollectionUtils.isEmpty(role.getPermissions())) stringJoiner.add(permission.getName());
+                });
+            });
+        }
+        return stringJoiner.toString();
+    }
 }

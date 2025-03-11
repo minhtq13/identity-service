@@ -5,6 +5,7 @@ import java.util.Set;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,10 +21,11 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Role {
 
-  @Id
-  String name;
-  String description;
+    @Id
+    String name;
 
-  @ManyToMany
-  Set<Permission> permissions;
+    String description;
+
+    @ManyToMany
+    Set<Permission> permissions;
 }

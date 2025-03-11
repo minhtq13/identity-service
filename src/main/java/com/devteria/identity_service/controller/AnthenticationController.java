@@ -27,42 +27,34 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AnthenticationController {
 
-  AuthenticationService authenticationService;
+    AuthenticationService authenticationService;
 
-  @PostMapping("/token")
-  ApiResponse<AuthenticationResponse> authenticate(@RequestBody AuthenticationRequest request) {
+    @PostMapping("/token")
+    ApiResponse<AuthenticationResponse> authenticate(@RequestBody AuthenticationRequest request) {
 
-    var result = authenticationService.authenticate(request);
-    return ApiResponse.<AuthenticationResponse>builder()
-        .result(result)
-        .build();
-  }
+        var result = authenticationService.authenticate(request);
+        return ApiResponse.<AuthenticationResponse>builder().result(result).build();
+    }
 
-  @PostMapping("/introspect")
-  ApiResponse<IntrospectResonse> authenticate(@RequestBody IntrospectRequest request)
-      throws JOSEException, ParseException {
+    @PostMapping("/introspect")
+    ApiResponse<IntrospectResonse> authenticate(@RequestBody IntrospectRequest request)
+            throws JOSEException, ParseException {
 
-    var result = authenticationService.introspect(request);
-    return ApiResponse.<IntrospectResonse>builder()
-        .result(result)
-        .build();
-  }
+        var result = authenticationService.introspect(request);
+        return ApiResponse.<IntrospectResonse>builder().result(result).build();
+    }
 
-  @PostMapping("/logout")
-  ApiResponse<Void> logout(@RequestBody LogoutRequest request) throws JOSEException, ParseException {
-    authenticationService.logout(request);
-    return ApiResponse.<Void>builder()
-        .build();
-  }
+    @PostMapping("/logout")
+    ApiResponse<Void> logout(@RequestBody LogoutRequest request) throws JOSEException, ParseException {
+        authenticationService.logout(request);
+        return ApiResponse.<Void>builder().build();
+    }
 
-  @PostMapping("/refresh")
-  ApiResponse<AuthenticationResponse> refreshToken(@RequestBody RefreshRequest request)
-      throws JOSEException, ParseException {
+    @PostMapping("/refresh")
+    ApiResponse<AuthenticationResponse> refreshToken(@RequestBody RefreshRequest request)
+            throws JOSEException, ParseException {
 
-    var result = authenticationService.refreshToken(request);
-    return ApiResponse.<AuthenticationResponse>builder()
-        .result(result)
-        .build();
-  }
-
+        var result = authenticationService.refreshToken(request);
+        return ApiResponse.<AuthenticationResponse>builder().result(result).build();
+    }
 }

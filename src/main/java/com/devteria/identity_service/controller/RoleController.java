@@ -27,25 +27,25 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RoleController {
 
-  RoleService roleService;
+    RoleService roleService;
 
-  @PostMapping
-  public ApiResponse<RoleResponse> create(@RequestBody RoleRequest request) {
-    return ApiResponse.<RoleResponse>builder()
-        .result(roleService.create(request))
-        .build();
-  }
+    @PostMapping
+    public ApiResponse<RoleResponse> create(@RequestBody RoleRequest request) {
+        return ApiResponse.<RoleResponse>builder()
+                .result(roleService.create(request))
+                .build();
+    }
 
-  @GetMapping
-  public ApiResponse<List<RoleResponse>> getAll() {
-    return ApiResponse.<List<RoleResponse>>builder()
-        .result(roleService.getAll())
-        .build();
-  }
+    @GetMapping
+    public ApiResponse<List<RoleResponse>> getAll() {
+        return ApiResponse.<List<RoleResponse>>builder()
+                .result(roleService.getAll())
+                .build();
+    }
 
-  @DeleteMapping("/{role}")
-  public ApiResponse<Void> delete(@PathVariable String role) {
-    roleService.delete(role);
-    return ApiResponse.<Void>builder().build();
-  }
+    @DeleteMapping("/{role}")
+    public ApiResponse<Void> delete(@PathVariable String role) {
+        roleService.delete(role);
+        return ApiResponse.<Void>builder().build();
+    }
 }

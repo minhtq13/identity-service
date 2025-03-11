@@ -26,5 +26,4 @@ public enum ErrorCode {
         this.message = message;
         this.statusCode = statusCode;
     }
-
 }

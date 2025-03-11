@@ -2,6 +2,7 @@ package com.devteria.identity_service.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,8 +18,8 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Permission {
 
-  @Id
-  String name;
-  String description;
+    @Id
+    String name;
 
+    String description;
 }

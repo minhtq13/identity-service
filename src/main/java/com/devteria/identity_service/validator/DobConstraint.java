@@ -8,16 +8,15 @@ import java.lang.annotation.Target;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 
-@Target({ ElementType.FIELD })
+@Target({ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = { DobValidator.class })
+@Constraint(validatedBy = {DobValidator.class})
 public @interface DobConstraint {
-  String message() default "Invalid date of birth";
+    String message() default "Invalid date of birth";
 
-  int min();
+    int min();
 
-  Class<?>[] groups() default {};
+    Class<?>[] groups() default {};
 
-  Class<? extends Payload>[] payload() default {};
-
+    Class<? extends Payload>[] payload() default {};
 }
